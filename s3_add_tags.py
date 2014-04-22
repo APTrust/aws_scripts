@@ -16,7 +16,7 @@ if __name__ == "__main__":
 	ts_restore.add_tag("type", "restore")
 
 	ts_receiving = tagging.TagSet()
-	ts_receiving.add_tag("type", "recieving")
+	ts_receiving.add_tag("type", "receiving")
 
 	restore = tagging.Tags()
 	restore.add_tag_set(ts_restore)
