@@ -16,7 +16,7 @@ def set_sha256(bucket, uuid, sha256):
     metadata = key.metadata
     metadata["sha256"] = sha256
     header_data = {"Content-Type": key.content_type }
-    print("{0}   {1}  {2}".format(uuid, metadata, header_data))
+    print("{0} => {1}".format(uuid, sha256))
     bucket.copy_key(uuid, va_bucket_name, uuid, headers=header_data, metadata=metadata)
 
 if __name__ == "__main__":
