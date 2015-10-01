@@ -15,7 +15,7 @@ def convertSize(num_bytes, unit='gb'):
 	unit = unit.lower()
 	if unit == 'b' or num_bytes < 1024: return "%d B" % num_bytes
 	units = {
-		'kb': 1, 'mb': 2, 'gb': 3, 'tb': 4, 'pb': 5, 'eb': 6,  
+		'kb': 1, 'mb': 2, 'gb': 3, 'tb': 4, 'pb': 5, 'eb': 6,
 	}
 	f_bytes = float(num_bytes)
 	for i in range(units[unit]):
@@ -43,8 +43,21 @@ if __name__ == "__main__":
 			if key.size > storage['largest']:
 				storage['largest'] = key.size
 
-	for bucket, stats in b.iteritems():
-		print("%s  >  %s files totalling %s; largest: %s" % (bucket, stats['count'], convertSize(stats['size']), convertSize(stats['largest'])))
+        format_str = "{0: <40} {1: >12} {2: >12} {3: >12}"
+        print(format_str.format("Bucket", "Files", "Size", "Largest"))
+	print("-" * 79)
+	#for bucket, stats in b.iteritems():
+        for bucket_name in sorted(b):
+                if bucket_name == 'B': # where does this come from?
+                        continue
+                stats = b[bucket_name]
+		print(format_str.format(bucket_name,
+                                        stats['count'],
+                                        convertSize(stats['size']),
+                                        convertSize(stats['largest'])))
 
 	print("-" * 79)
-	print("Overall S3 Stats - %s files totalling %s; largest: %s" % (storage['count'], convertSize(storage['total']), convertSize(storage['largest'])))
+	print(format_str.format("Total:",
+                                storage['count'],
+                                convertSize(storage['total']),
+                                convertSize(storage['largest'])))
