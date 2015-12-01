@@ -15,24 +15,22 @@ def list_bucket(bucket_name):
     create_db_if_necessary(conn)
     s3 = S3Connection()
     bucket = s3.get_bucket(bucket_name)
-    count = 0
     for key in bucket.list():
         full_key_with_metadata = bucket.get_key(key.name)
-        pk = add_to_db(conn, full_key_with_metadata)
-        print("{0:08d}  {1}".format(pk, key.name))
-        count += 1
-        if count > 10:
-            return
+        pk, saved = add_to_db(conn, full_key_with_metadata)
+        status = 'Inserted'
+        if saved == False:
+            status = 'Exists - Not Updated'
+        print("{0:08d}  {1}  {2}".format(pk, key.name, status))
 
 def add_to_db(conn, key):
-#    pk = 1
-#    query = "select last_insert_rowid()"
-#    c = conn.cursor()
-#    c.execute(query)
-#    row = c.fetchone()
-#    if row and row[0]:
-#        pk = row[0] + 1
     c = conn.cursor()
+    exists = "select id from s3_keys where bucket=? and name=? and etag=?"
+    c = conn.cursor()
+    c.execute(exists, (key.bucket.name, key.name, key.etag.replace('"', '')))
+    row = c.fetchone()
+    if row and len(row) > 0:
+        return row[0], False  # the row's id / primary key
     statement = """insert into s3_keys
     (bucket, name, cache_control, content_type, etag,
     last_modified, storage_class, size)
@@ -50,7 +48,7 @@ def add_to_db(conn, key):
         conn.execute(statement, (pk, k, v))
         conn.commit()
     c.close()
-    return pk
+    return pk, True
 
 def create_db_if_necessary(conn):
     query = """SELECT name FROM sqlite_master WHERE type='table'
