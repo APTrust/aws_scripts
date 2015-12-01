@@ -16,21 +16,16 @@ def list_bucket(bucket_name):
     s3 = S3Connection()
     bucket = s3.get_bucket(bucket_name)
     for key in bucket.list():
-        full_key_with_metadata = bucket.get_key(key.name)
-        pk, saved = add_to_db(conn, full_key_with_metadata)
+        pk, saved = add_to_db(conn, bucket, key)
         status = 'Inserted'
         if saved == False:
             status = 'Exists - Not Updated'
         print("{0:08d}  {1}  {2}".format(pk, key.name, status))
 
-def add_to_db(conn, key):
-    c = conn.cursor()
-    exists = "select id from s3_keys where bucket=? and name=? and etag=?"
-    c = conn.cursor()
-    c.execute(exists, (key.bucket.name, key.name, key.etag.replace('"', '')))
-    row = c.fetchone()
-    if row and len(row) > 0:
-        return row[0], False  # the row's id / primary key
+def add_to_db(conn, bucket, key):
+    pk = existing_record_id(conn, key)
+    if pk:
+        return pk, False  # No need to process this again
     statement = """insert into s3_keys
     (bucket, name, cache_control, content_type, etag,
     last_modified, storage_class, size)
@@ -42,13 +37,24 @@ def add_to_db(conn, key):
                           key.size))
     conn.commit()
     pk = c.lastrowid
-    for k,v in key.metadata.iteritems():
+    full_key = bucket.get_key(key.name)
+    for k,v in full_key.metadata.iteritems():
         statement = """insert into s3_meta (key_id, name, value)
         values (?,?,?)"""
         conn.execute(statement, (pk, k, v))
         conn.commit()
     c.close()
     return pk, True
+
+def existing_record_id(conn, key):
+    exists = "select id from s3_keys where bucket=? and name=? and etag=?"
+    c = conn.cursor()
+    c.execute(exists, (key.bucket.name, key.name, key.etag.replace('"', '')))
+    row = c.fetchone()
+    if row and len(row) > 0:
+        return row[0]
+    return None
+
 
 def create_db_if_necessary(conn):
     query = """SELECT name FROM sqlite_master WHERE type='table'
