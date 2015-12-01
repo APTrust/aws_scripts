@@ -30,6 +30,7 @@ def add_to_db(conn, bucket, key):
     (bucket, name, cache_control, content_type, etag,
     last_modified, storage_class, size)
     values (?,?,?,?,?,?,?,?)"""
+    c = conn.cursor()
     c.execute(statement, (key.bucket.name, key.name,
                           key.cache_control, key.content_type,
                           key.etag.replace('"', ''),
