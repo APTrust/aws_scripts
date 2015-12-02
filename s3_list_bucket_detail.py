@@ -48,9 +48,9 @@ def add_to_db(conn, bucket, key):
     return pk, True
 
 def existing_record_id(conn, key):
-    exists = "select id from s3_keys where bucket=? and name=? and etag=?"
+    exists = "select id from s3_keys where name=? and etag=? and bucket=?"
     c = conn.cursor()
-    c.execute(exists, (key.bucket.name, key.name, key.etag.replace('"', '')))
+    c.execute(exists, (key.name, key.etag.replace('"', ''), key.bucket.name))
     row = c.fetchone()
     if row and len(row) > 0:
         return row[0]
@@ -71,6 +71,12 @@ def create_db_if_necessary(conn):
         content_type text,
         etag text, last_modified datetime,
         storage_class text, size int)"""
+        conn.execute(statement)
+        conn.commit()
+
+        print("Creating index ix_name_etag_bucket on s3_keys")
+        statement = """create index ix_name_etag_bucket on
+        s3_keys(name, etag, bucket)"""
         conn.execute(statement)
         conn.commit()
 
