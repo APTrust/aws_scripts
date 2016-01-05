@@ -54,3 +54,6 @@ docs/_build/
 
 # Emacs stuff
 *~
+
+# Special file, used for some S3 metadata additions
+files_sha256.txt
